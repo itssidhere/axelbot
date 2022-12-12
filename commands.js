@@ -80,3 +80,17 @@ export const CHALLENGE_COMMAND = {
     ],
     type: 1,
 };
+
+export const PLAY_COMMAND = {
+    name: 'play',
+    description: 'Play a song',
+    options: [
+        {
+            type: 3,
+            name: 'song',
+            description: 'Pick your song',
+            required: true,
+        },
+    ],
+    type: 1,
+};

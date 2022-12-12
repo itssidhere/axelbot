@@ -11,7 +11,11 @@ import {
     CHALLENGE_COMMAND,
     TEST_COMMAND,
     HasGuildCommands,
+    PLAY_COMMAND,
 } from './commands.js';
+
+import fs from 'fs';
+import ytdl from 'ytdl-core';
 
 import dotenv from 'dotenv';
 dotenv.config();
@@ -88,6 +92,45 @@ app.post('/interactions', async function (req, res) {
 
         }
 
+        // "play" guild command
+        if (name === 'play') {
+            // Send a message into the channel where command was triggered from
+            const song = req.body.data.options[0].value;
+            const voiceChannel = req.body.member.voice.channel_id;
+            const guildId = req.body.guild_id;
+            const channelId = req.body.channel_id;
+            const userId = req.body.member.user.id;
+            const songInfo = await ytdl.getInfo(song);
+            const songTitle = songInfo.videoDetails.title;
+
+            const connection = await DiscordRequest(
+                'POST',
+                `/voice/channels/${voiceChannel}/connect`,
+                {
+                    guild_id: guildId,
+                    channel_id: voiceChannel,
+                    self_mute: false,
+                    self_deaf: false,
+
+                }
+            );
+
+            const dispatcher = connection.play(ytdl(song, { filter: 'audioonly' }));
+
+            dispatcher.on('finish', () => {
+                console.log('Finished playing!');
+            }
+            );
+
+            return res.send({
+                type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+                data: {
+                    content: `Playing ${songTitle} in <#${channelId}>`,
+                },
+            });
+
+        }
+
 
     }
 });
@@ -98,5 +141,6 @@ app.listen(PORT, () => {
     HasGuildCommands(process.env.APP_ID, process.env.GUILD_ID, [
         TEST_COMMAND,
         CHALLENGE_COMMAND,
+        PLAY_COMMAND
     ]);
 });
